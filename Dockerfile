@@ -23,7 +23,7 @@ RUN \
 #
 # At Expanse, the admins provided a fixed UID/GID that the container will be run as;
 # the app fails to start if this isn't a resolvable username.  For now, create the username
-# by hand.  If we hit this at more sites, we can do a for-loop for populating /etc/{passwd,groups}
+# by hand.  If we hit this at more sites, we can do a for-loop for populating /etc/{passwd,group}
 # instead of adding individual user accounts one-by-one.
 #
 # The Expanse user has such a high UID that it causes problems with people
