@@ -19,6 +19,22 @@ RUN \
     && yum clean all && rm -rf /var/cache/yum/* \
     && mkdir /app
 
+# Stolen from https://github.com/opensciencegrid/osgvo-docker-pilot/blob/master/Dockerfile
+#
+# At Expanse, the admins provided a fixed UID/GID that the container will be run as;
+# the app fails to start if this isn't a resolvable username.  For now, create the username
+# by hand.  If we hit this at more sites, we can do a for-loop for populating /etc/{passwd,group}
+# instead of adding individual user accounts one-by-one.
+#
+# The Expanse user has such a high UID that it causes problems with people
+# running this container using UID namespaces.
+# Set NO_EXPANSE_USER when building the image to not add that user.
+ARG NO_EXPANSE_USER=
+RUN if [ -z "$NO_EXPANSE_USER" ]; then \
+        groupadd --gid 12497 g12497 && useradd --gid 12497 --create-home --uid 532362 u532362; \
+    fi
+
+
 WORKDIR /app
 
 # Install application dependencies
