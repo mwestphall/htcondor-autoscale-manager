@@ -30,7 +30,7 @@ RUN \
 # running this container using UID namespaces.
 # Set NO_EXPANSE_USER when building the image to not add that user.
 ARG NO_EXPANSE_USER=
-RUN if [[ -z "$NO_EXPANSE_USER" ]]; then \
+RUN if [ -z "$NO_EXPANSE_USER" ]; then \
         groupadd --gid 12497 g12497 && useradd --gid 12497 --create-home --uid 532362 u532362; \
     fi
 
