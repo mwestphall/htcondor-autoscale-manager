@@ -2,8 +2,8 @@
 import subprocess
 import json
 
-import classad
-import htcondor
+import classad2 as classad
+import htcondor2 as htcondor
 
 def count_deploy(query, resource, pool=None):
 

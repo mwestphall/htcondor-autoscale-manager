@@ -2,11 +2,11 @@
 from . import get_offline_ads, count_idle, generate_offline_ad
 from . import count_deploy
 
-import htcondor
+import htcondor2 as htcondor
 
 import time
 
-def occupancy_metric(query, resource, scale_param, pool=None):
+def occupancy_metric(query, resource, scale_param, pool=None, security_context=None):
     now = time.time()
 
     counts = count_deploy(query, resource, pool=pool)
@@ -23,7 +23,7 @@ def occupancy_metric(query, resource, scale_param, pool=None):
     if not good_ads:
         ad = generate_offline_ad(resource, pool=pool)
         if ad:
-            coll = htcondor.Collector(pool)
+            coll = htcondor.Collector(pool, security=security_context)
             coll.advertise([ad], command="UPDATE_STARTD_AD")
             good_ads.append(ad)
 
