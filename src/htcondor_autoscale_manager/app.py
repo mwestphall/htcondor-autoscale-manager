@@ -1,13 +1,18 @@
 
 import os
 
-import htcondor
+import htcondor2 as htcondor
 
 from flask import Flask
 from flask_apscheduler import APScheduler
 
 import htcondor_autoscale_manager.occupancy_metric
 import htcondor_autoscale_manager.patch_annotation
+
+from contextlib import contextmanager
+from tempfile import TemporaryDirectory
+from pathlib import Path
+import shutil
 
 app = Flask(__name__)
 
@@ -21,6 +26,22 @@ scheduler.init_app(app)
 scheduler.start()
 
 g_metric = 1.0
+
+
+def bearer_token_context(app):
+    ''' Helper function that creates an HTCondor Security Context 
+    based on a bearer token specified via app or env config
+    '''
+    bearer_tkn = app.config.get("BEARER_TOKEN") or os.environ.get("BEARER_TOKEN")
+    bearer_tkn_file = app.config.get('BEARER_TOKEN_FILE') or os.environ.get('BEARER_TOKEN_FILE') 
+    
+    if bearer_tkn:
+        return htcondor.SecurityContext(token=bearer_tkn)
+    elif bearer_tkn_file:
+        with open(bearer_tkn_file, 'r') as f:
+            token = f.read().strip()
+            return htcondor.SecurityContext(token=token)
+        
 
 @scheduler.task("interval", id="metric_update", seconds=60)
 def metric_update():
@@ -36,23 +57,13 @@ def metric_update():
     scale_param = {'velocity': int(app.config.get("SCALE_VELOCITY", 1)),
                    'idlepods': int(app.config.get("IDLE_PODS", 0))}
 
-    with htcondor.SecMan() as sm:
-        if 'BEARER_TOKEN' in app.config:
-            sm.setToken(htcondor.Token(app.config['BEARER_TOKEN']))
-        elif 'BEARER_TOKEN' in os.environ:
-            sm.setToken(htcondor.Token(os.environ['BEARER_TOKEN']))
-        elif 'BEARER_TOKEN_FILE' in app.config:
-            with open(app.config['BEARER_TOKEN_FILE']) as fp:
-                sm.setToken(htcondor.Token(fp.read().strip()))
-        elif 'BEARER_TOKEN_FILE' in os.environ:
-            with open(os.environ['BEARER_TOKEN_FILE']) as fp:
-                sm.setToken(htcondor.Token(fp.read().strip()))
-        try:
-            global g_metric
-            g_metric, counts = htcondor_autoscale_manager.occupancy_metric(query, resource, scale_param)
-        except Exception as exc:
-            print(f"Exception occurred during metric update: {exc}")
-            return
+    try:
+        global g_metric
+        security = bearer_token_context(app)
+        g_metric, counts = htcondor_autoscale_manager.occupancy_metric(query, resource, scale_param, security_context=security)
+    except Exception as exc:
+        print(f"Exception occurred during metric update: {exc}")
+        return
 
     # Annotate the 'cost' of deleting the pod.  We only want to patch
     # for changes (which might include when the job originally starts).

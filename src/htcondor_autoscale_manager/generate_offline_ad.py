@@ -2,8 +2,8 @@
 import random
 import time
 
-import classad
-import htcondor
+import classad2 as classad
+import htcondor2 as htcondor
 
 def get_offline_ads(resource, pool=None):
     coll = htcondor.Collector(pool)

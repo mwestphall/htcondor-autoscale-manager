@@ -3,7 +3,7 @@
 import argparse
 import time
 
-import htcondor
+import htcondor2 as htcondor
 
 import htcondor_autoscale_manager
 
