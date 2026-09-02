@@ -46,6 +46,15 @@ RUN touch /etc/sysconfig/httpd && mkdir /wsgi && \
     curl -L https://dl.k8s.io/release/v1.24.0/bin/linux/amd64/kubectl > /app/kubectl && \
     chmod +x /app/kubectl
 
+# System Directories need to be 1777 so unpriv users can write to them
+RUN \
+    chmod 1777 /var/log/ && \
+    chmod 1777 /var/run/ && \
+    chmod 1777 /var/log/supervisor/ && \
+    chmod 1777 /etc/supervisord.d/ && \
+    chmod 1777 /var/log/httpd/ && \
+    chmod 1777 /run/httpd/
+
 COPY examples/apache.conf /etc/httpd/conf.d/htcondor-autoscale-manager.conf
 COPY examples/supervisor-apache.conf /etc/supervisord.d/40-apache.conf
 COPY examples/htcondor_autoscale.wsgi /wsgi
